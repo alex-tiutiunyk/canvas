@@ -9,7 +9,6 @@ let ctx = canv.getContext('2d');
 let lineWidth = 10;
 let lineColor = 'black';
 let coords = [];
-console.log(JSON.parse(localStorage.getItem('coords')));
 let timer = null;
 
 // set canvas size
@@ -27,7 +26,7 @@ const resetLayer = () => {
   clearCanvasLayer();
 
   clearInterval(timer);
-  localStorage.setItem('coords', JSON.stringify([]));
+  coords = [];
 
   console.log('Cleared');
 };
@@ -35,21 +34,23 @@ btnClear.addEventListener('click', resetLayer);
 
 // play
 const playCanvas = () => {
-  coords = JSON.parse(localStorage.getItem('coords'));
-
   clearCanvasLayer();
+  let coordsCopy = [...coords];
+
+  if (!coordsCopy.length) return console.log('Empty');
 
   timer = setInterval(() => {
-    if (!coords.length) {
+    if (!coordsCopy.length) {
       clearInterval(timer);
       ctx.beginPath();
-      console.log('Empty');
       return;
     }
-    let crd = coords.shift();
+    let crd = coordsCopy.shift();
     let e = { clientX: crd['0'], clientY: crd['1'] };
+    const lineWidth = crd['2'];
+    const lineColor = crd['3'];
 
-    drawLine(e);
+    drawLine(e, lineWidth, lineColor);
   }, 10);
   console.log('Play');
 };
@@ -72,26 +73,24 @@ colorPicker.addEventListener('change', setFillColor);
 // set mouseDown
 canv.addEventListener('mousedown', function () {
   isMouseDown = true;
-  coords = JSON.parse(localStorage.getItem('coords'));
 });
 
 canv.addEventListener('mouseup', function () {
   isMouseDown = false;
   ctx.beginPath();
   coords.push('mouseup');
-  localStorage.setItem('coords', JSON.stringify(coords));
 });
 
-function drawLine(e) {
-  ctx.lineWidth = lineWidth;
-  ctx.strokeStyle = lineColor;
+function drawLine(e, width, color) {
+  ctx.lineWidth = width;
+  ctx.strokeStyle = color;
 
   ctx.lineTo(e.clientX, e.clientY);
   ctx.stroke();
 
   ctx.beginPath();
-  ctx.fillStyle = lineColor;
-  ctx.arc(e.clientX, e.clientY, lineWidth / 2, 0, Math.PI * 2);
+  ctx.fillStyle = color;
+  ctx.arc(e.clientX, e.clientY, width / 2, 0, Math.PI * 2);
   ctx.fill();
 
   ctx.beginPath();
@@ -101,8 +100,8 @@ function drawLine(e) {
 // canvas settings
 canv.addEventListener('mousemove', function (e) {
   if (isMouseDown) {
-    coords.push([e.clientX, e.clientY]);
+    coords.push([e.clientX, e.clientY, lineWidth, lineColor]);
 
-    drawLine(e);
+    drawLine(e, lineWidth, lineColor);
   }
 });
